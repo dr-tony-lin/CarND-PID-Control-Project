@@ -3,29 +3,25 @@
 
 double Twiddle::twiddle(VectorXd &p, const double target, const int steps, const double dt, double threshold) {
   p.setZero();
-  VectorXd pp(p.size());
-  pp.setZero();
   VectorXd dp(p.size());
   dp.fill(1.);
-  double best = run(pp, target, steps, dt);
+  double best = run(p, target, steps, dt);
   double error = 0;
   while (dp.sum() > threshold) {
     for (int i = 0; i < p.size(); i++) {
-      pp[i] += dp[i];
-      error = run(pp, target, steps, dt);
+      p[i] += dp[i];
+      error = run(p, target, steps, dt);
       if (error < best) {
         best = error;
-        p = pp;
         dp[i] *= 1.1;
       } else {
-        pp[i] -= 2 * dp[i];
-        error = run(pp, target, steps, dt);
+        p[i] -= 2 * dp[i];
+        error = run(p, target, steps, dt);
         if (error < best) {
           best = error;
-          p = pp;
           dp[i] *= 1.1;
         } else {
-          pp[i] += dp[i];
+          p[i] += dp[i];
           dp[i] *= 0.9;
         }
       }
