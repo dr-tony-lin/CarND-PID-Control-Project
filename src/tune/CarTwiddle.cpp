@@ -59,6 +59,9 @@ void CarTwiddle::move(double dt, double steering, double acceleration) {
   if (steering > max_steering) steering = max_steering;
   if (steering < -max_steering) steering = -max_steering;
 
+  if (acceleration > max_acceleration) acceleration = max_acceleration;
+  if (acceleration < max_deceleration) acceleration = max_deceleration;
+
   // perturb the acceleration and steering angle with gaussian noise
   acceleration += rand_a(generator);
   steering += rand_yawd(generator) + steering_drift;
@@ -76,7 +79,7 @@ void CarTwiddle::move(double dt, double steering, double acceleration) {
     y += radius * (cos(yaw) - cos(new_yaw));
 
   #ifdef VERBOSE_OUT
-    cout << "Move: " << turn << " " << yaw << " " << new_yaw << " " << dist << " " << steering << " " << radius << " " << velocity << endl;
+    cout << "Move: " << turn << " " << yaw << " " << new_yaw << " " << dist << " " << steering << " " << radius <<  " " << acceleration << " " << velocity << endl;
   #endif
   } else {  // turn is 0
     // update x and y
@@ -86,6 +89,7 @@ void CarTwiddle::move(double dt, double steering, double acceleration) {
 
   // update velocity
   velocity += acceleration * dt;
+  if (velocity > max_velocity) velocity = max_velocity;
   // update yaw
   yaw = new_yaw;
 }

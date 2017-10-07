@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
   double velocity = 60;
   double target = 0;
   double length = 2;
+  bool throttle = false;
 
   // Process command line options
   for (int i = 1; i < argc; i++) {
@@ -46,22 +47,25 @@ int main(int argc, char* argv[]) {
         std::cerr << "Invalid drift: " << argv[i] << std::endl;
         exit(-1);
       }
+    } else if (std::string((argv[i])) == "-throttle") { // tune speed acceleration
+      throttle = true;
     } else {
       std::cerr << "Unknown option: " << argv[i] << std::endl;
       exit(-1);
     }
   }
 
-   CarTwiddle car(2.0, 0, 1, 0, velocity, noise, drift);
-  car.setMode(car.STEERING_MODE);
-  VectorXd steering_p(3);
-  double error = car.twiddle(steering_p, target, steps, dt, 0.0001);
-  std::cout << "Error: " << error << ", Steering coefficients: " << steering_p[0] << ", " << steering_p[1] << ", " << steering_p[2] << std::endl;
-  // car.setMode(car.ACCELERATION_MODE);
-  // VectorXd accel_p(3);
-  // car.twiddle(accel_p, target, steps, dt, 0.0001);
-  // std::cout << "Acceleration coefficient: " << accel_p[0] << ", " << accel_p[1] << ", " << accel_p[2] << std::endl;
-  // VectorXd decel_p(3);
-  // car.twiddle(decel_p, target, 100, 0.001);
-  // std::cout << "Deceleration coefficient: " << decel_p[0] << ", " << decel_p[1] << ", " << decel_p[2] << std::endl;
+  CarTwiddle car(2.0, 0, 1, 0, velocity, noise, drift);
+  if (throttle) {
+    car.setMode(car.ACCELERATION_MODE);
+    VectorXd accel_p(3);
+    car.twiddle(accel_p, target, steps, dt, 0.0001);
+    std::cout << "Acceleration coefficient: " << accel_p[0] << ", " << accel_p[1] << ", " << accel_p[2] << std::endl;
+  }
+  else {
+    car.setMode(car.STEERING_MODE);
+    VectorXd steering_p(3);
+    double error = car.twiddle(steering_p, target, steps, dt, 0.0001);
+    std::cout << "Error: " << error << ", Steering coefficients: " << steering_p[0] << ", " << steering_p[1] << ", " << steering_p[2] << std::endl;  
+  }
 }
