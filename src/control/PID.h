@@ -47,18 +47,19 @@ class PID {
   void init(double Kp, double Ki, double Kd);
 
   /**
+   * Set the coefficients without re-initializing the PID
+   */ 
+  void setPID(double Kp, double Kd, double Ki);
+
+  /**
    * Return current error
    */ 
   double getError() { return error;}
 
-  /**
-   * Return the current updated value
-   */ 
-  double getValue() { return target + error;}
-
   /*
   * Update the PID error variables given cross track error.
   * @param value the error
+  @param dt the delta time
   */
   void updateError(double value);
 

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include "CarTwiddle.h"
 
 using namespace std;
@@ -71,9 +72,9 @@ void CarTwiddle::move(double dt, double steering, double acceleration) {
   double turn = tan(steering) * dist / length;
   double new_yaw = normalizeAngle(yaw + turn);
 
-  if (fabs(turn) > EPSILON) {  // turn is not 0
+  if (fabs(yaw) > EPSILON) {  // turn is not 0
     // Compute the turn radius
-    double radius = dist / turn;
+    double radius = velocity * dt / turn; // del psi = turn / dt
     // update x and y
     x += radius * (sin(new_yaw) - sin(yaw));
     y += radius * (cos(yaw) - cos(new_yaw));
@@ -94,7 +95,8 @@ void CarTwiddle::move(double dt, double steering, double acceleration) {
   yaw = new_yaw;
 }
 
-double CarTwiddle::run(const VectorXd &p, const double target, const int steps, const double dt) {
+double CarTwiddle::run(const VectorXd &p, const double target, const int steps, const double dt,
+        vector<double> *x_trajectory, vector<double> *y_trajectory) {
   // Backup the original settings
   CarTwiddle origin(*this);
   // Initialize PID
@@ -114,7 +116,13 @@ double CarTwiddle::run(const VectorXd &p, const double target, const int steps, 
       // Get new PID control value
       double control = pid.getControl();
       // Apply control value to move the car
-      mode == STEERING_MODE? move(dt, control, 0): move(0.05, 0, control);
+      mode == STEERING_MODE? move(dt, control, 0): move(dt, 0, control);
+      if (x_trajectory) {
+        x_trajectory->push_back(x);
+      }
+      if (y_trajectory) {
+        y_trajectory->push_back(y);
+      }
 #ifdef VERBOSE_OUT
       if (i <= steps) {
         cout << "Car moved with PID: " << control << ", " << x << " " << y << " " << yaw << " " << velocity << endl;

@@ -13,7 +13,8 @@ include_directories(/usr/local/include libs)
 link_directories(/usr/local/lib)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
-
+add_definitions(-DPLOT_WITH_MATPLOT=1)
+find_package(PythonLibs 2.7)
 include_directories(/usr/local/opt/openssl/include)
 link_directories(/usr/local/opt/openssl/lib)
 link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
@@ -23,5 +24,8 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 add_executable(pid ${sources} src/main.cpp )
 
 add_executable(tune ${sources} src/tune.cpp )
-
+message("${PYTHON_INCLUDE_DIRS}, ${PYTHON_LIBRARIES}")
+target_include_directories(tune PRIVATE ${PYTHON_INCLUDE_DIRS})
+target_include_directories(tune PRIVATE /usr/local/lib/python2.7/dist-packages/numpy/core/include)
+target_link_libraries(tune ${PYTHON_LIBRARIES})
 target_link_libraries(pid z ssl uv uWS)

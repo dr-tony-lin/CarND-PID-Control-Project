@@ -9,13 +9,17 @@ PID::PID() {}
 PID::~PID() {}
 
 void PID::init(double Kp, double Kd, double Ki) {
-  this->Kp = Kp;
-  this->Ki = Ki;
-  this->Kd = Kd;
+  setPID(Kp, Kd, Ki);
   error = 0;
   error_sum = 0;
   derror = 0;
   initial = true;
+}
+
+void PID::setPID(double Kp, double Kd, double Ki) {
+  this->Kp = Kp;
+  this->Ki = Ki;
+  this->Kd = Kd;
 }
 
 void PID::updateError(double value) {

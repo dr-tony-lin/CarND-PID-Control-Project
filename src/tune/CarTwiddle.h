@@ -24,9 +24,9 @@ private:
   double noise[2];
   double steering_drift;
   double max_steering = M_PI/ 4.0;
-  double max_acceleration = 10;
+  double max_acceleration = 5;
   double max_deceleration = -20;
-  double max_velocity = 34;
+  double max_velocity = 100;
   int mode = STEERING_MODE;
 
   PID pid;
@@ -76,10 +76,13 @@ public:
    * @param dt the time to move
    * @param steering the steering angle
    * @param acceleration the acceleration
+   * @param x_trajectory store the x trajectory, default is not to store the trajectory
+   * @param y_trajectory store the y trajectory, default is not to store the trajectory
    */ 
   virtual void move(double dt, double steering, double acceleration = 0);
 
-  double run(const Eigen::VectorXd &t, const double target, const int steps, const double dt);
+  double run(const Eigen::VectorXd &t, const double target, const int steps, const double dt,
+              vector<double> *x_trajectory, vector<double> *y_trajectory);
 };
 
 #endif
