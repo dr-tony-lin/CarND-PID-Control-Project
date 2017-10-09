@@ -92,14 +92,14 @@ int main(int argc, char* argv[])
 {
   uWS::Hub h;
 
-  double s_coeffs[3] = {0.112798, 3.19109, 0}; 
+  double s_coeffs[3] = {0.098271, 4.02241, 0}; // {0.119058, 3.23448, 0}; 
   // ./tune -steps 1000 -dt 0.01 -y 1 -speed 100
   // Speed: 60, Steering: 0.194311, 4.77424, 0, Error: 2.33868e-76
   // Speed: 70, Steering: 0.119058, 3.23448, 0, Error: 4.02715e-69
   // Speed: 80, Steering: 0.140576, 2.9808, 0, Error: 4.8082e-87
   // Speed: 90, Steering: 0.0798445, 2.01252, 0, Error: 9.72584e-72
   // Speed: 100, Steering: 0.0651893, 1.63626, 0, Error: 4.81245e-72
-  double v_coeffs[3] = {11.4359, -6.1051, 0};
+  double v_coeffs[3] = {13.5795, -11.4359, 0};
   // ./tune -steps 1000 -dt 0.01 -y 1 -speed 80 -accel -target 5
   // Speed: 30, Acceleration coefficient: 11.4359, -4.641, 0, Error: 4.54384e-28
   // Speed: 40, Acceleration coefficient: 11.4359, -4.641, 0, Error: 4.54384e-28
