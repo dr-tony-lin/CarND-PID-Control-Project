@@ -68,15 +68,16 @@ int main(int argc, char* argv[]) {
 
   for (int v = 30; v <= velocity; v += 10) {
     CarTwiddle car(length, 0, y, 0, v * 1.61 * 1000 / 3600.0, noise, drift);
+
+    VectorXd steering_p(3);
+    VectorXd accel_p(3);
     if (accel) {
       car.setMode(car.ACCELERATION_MODE);
-      VectorXd accel_p(3);
       double error = car.twiddle(accel_p, v + target * 1.61 * 1000 / 3600.0, steps, dt, 0.0001);
       std::cout  << "Speed: " << v << ", Acceleration coefficient: " << accel_p[0] << ", " << accel_p[1] << ", " << accel_p[2] << ", Error: " << error << std::endl;
     }
     else {
       car.setMode(car.STEERING_MODE);
-      VectorXd steering_p(3);
       double error = car.twiddle(steering_p, target, steps, dt, 0.0001);
       std::cout << "Speed: " << v << ", Steering: " << steering_p[0] << ", " << steering_p[1] << ", " << steering_p[2] << ", Error: " << error << std::endl; 
     }
@@ -88,7 +89,7 @@ int main(int argc, char* argv[]) {
     } else {
       car.run(steering_p, target, steps, dt, &x_trajectory, &y_trajectory);
     }
-    char* plot_specs[] = {"b", "r", "g", "c", "y", "m", "k", "w"};
+    std::string plot_specs[] = {"b", "r", "g", "c", "y", "m", "k", "w"};
     plt::plot(x_trajectory, y_trajectory, plot_specs[(v/10-3)%8]);
     plt::show();
 #endif
