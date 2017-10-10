@@ -38,11 +38,13 @@ double computeSpeedTarget(double angle, double max) {
   double y = fabs(angle);
   if (y < 0.02) return max;
   if (y < 0.075 ) return std::fmin(max,95);
-  if (y < 0.078 ) return std::fmin(max, 90);
-  if (y < 0.082 ) return std::fmin(max, 85);
-  if (y < 0.085 ) return std::fmin(max, 55);
-  if (y < 0.0875 ) return std::fmin(max, 40);
-  if (y < 0.09 ) return std::fmin(max, 35);
+  if (y < 0.08 ) return std::fmin(max, 90);
+  if (y < 0.085 ) return std::fmin(max, 85);
+  if (y < 0.0875 ) return std::fmin(max, 75);
+  if (y < 0.1 ) return std::fmin(max, 75);
+  if (y < 0.15 ) return std::fmin(max, 65);
+  if (y < 0.175 ) return std::fmin(max, 40);
+  if (y < 0.2 ) return std::fmin(max, 35);
   if (y < 0.3 ) return std::fmin(max, 30);
   if (y < 0.5 ) return std::fmin(max, 25);
   return std::fmin(max, 20);
@@ -92,7 +94,11 @@ int main(int argc, char* argv[])
 {
   uWS::Hub h;
 
-  double s_coeffs[3] = {0.108, 3.52, 0}; // {0.119058, 3.23448, 0}; 
+#ifdef APPLY_LOWPASS_FILTER
+  double s_coeffs[3] = {0.3, 4.5, 0};
+#else
+  double s_coeffs[3] = {0.108, 3.52, 0}; // {0.119058, 3.23448, 0};
+#endif
   // ./tune -steps 1500 -dt 0.01 -y 1 -speed 100
   // Speed: 50, Steering: 0.0595525, 3.29189, 0, Error: 4.36856e-50
   // Speed: 60, Steering: 0.362673, 6.29715, 0, Error: 4.19443e-163
@@ -108,6 +114,7 @@ int main(int argc, char* argv[])
   // Speed: 60, Acceleration coefficient: 11.4359, -7.71561, 0, Error: 4.54384e-28
   // Speed: 70, Acceleration coefficient: 13.5795, -11.4359, 0, Error: 8.07794e-28
   // Speed: 80, Acceleration coefficient: 24.5227, -21.3843, 0, Error: 2.01948e-28
+
   double max_speed = 100;
   double max_accel = 8;
   double max_decel = -20;
@@ -159,7 +166,11 @@ int main(int argc, char* argv[])
   // Use the mean of past 5 readings to determine the speed of the vehicle
   Reducer<double> angleReducer(5);
 
-  h.onMessage([&pid_steering, &pid_accel, &angleReducer, max_speed, max_accel, max_decel]
+  // Use the mean of past 40 readings to determine the curverature
+  Reducer<double> curvReducer(35);
+  Reducer<double> speedReducer(35);
+
+  h.onMessage([&pid_steering, &pid_accel, &angleReducer, &curvReducer, &speedReducer, max_speed, max_accel, max_decel]
     (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -183,6 +194,24 @@ int main(int argc, char* argv[])
           pid_steering.updateError(cte);
           // Get the PID control value,and normalize it to [-1, 1] range
           steer_value = pid_steering.getControl() / (0.25 * M_PI);
+          
+          // Add the angle to the reducer
+          angleReducer.push(fabs(angle));
+          
+#ifdef APPLY_LOWPASS_FILTER
+          curvReducer.push(angle);
+          speedReducer.push(speed);
+          // Apply a low pass filter once we have enough samples
+          if (curvReducer.getNumberOfSamplesReceived() >= 200) {
+            // Comoute the average turns from the time averaged angles
+            // steering offset = atan(turn*length/velocity)
+            double turn = curvReducer.sum() / curvReducer.size();
+            turn *= 2.5/speedReducer.mean<double>(); // 2.5m is the vehicle length
+            double steer_curve = atan(turn);
+            steer_value -= steer_curve;
+            std::cout << "curve adjustment: " << steer_curve << std::endl;
+          }
+#endif
           // Clamp steering value to [-1, 1] range
           if (steer_value > 1) {
             steer_value = 1;
@@ -191,11 +220,9 @@ int main(int argc, char* argv[])
             steer_value = -1;
           }
 
-          // Add the angle to the reducer
-          angleReducer.push(fabs(angle));
           // Get the average of the past angle readings
           double reduced_angle = angleReducer.mean<double>();
-          
+
           // Determing the speed from the mean angle
           double targetSpeed = computeSpeedTarget(deg2rad(reduced_angle), max_speed);
           // The scceleration or deceleration

@@ -9,20 +9,40 @@ using namespace std;
  * Reduce functions include min, max, sum, weighted,and unweighted means
  */ 
 template<typename T> class Reducer {
+  // size of the samples to reduce
   int limit;
+  // total samples received so far
+  long long total_samples;
+  // queue of samples to keep
   deque<T> queue; 
 public:
   Reducer(int size_limit): limit(size_limit) {};
 
+  int getLimit() { return limit;}
+
   void push(const T &v) {
+    total_samples++;
     queue.push_back(v);
     if (queue.size() > limit) {
       queue.pop_front();
     }
   };
 
+  /**
+   * Return size of the reducer which is the number of samples to reduce
+   */ 
   int size() { return queue.size();}
 
+  /**
+   * Return the total number of samples to received so far
+   */ 
+  long long getNumberOfSamplesReceived() { return total_samples;}
+
+  /**
+   * The index operator.
+   * @param index the index
+   * @return the sample at the index location. Newer samples has higher indices
+   */ 
   T &operator[](int index) {
     if (index >= 0 && index < queue.size()) {
       return queue[index];
