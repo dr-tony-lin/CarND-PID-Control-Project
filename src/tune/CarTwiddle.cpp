@@ -56,6 +56,10 @@ void CarTwiddle::setMode(int mode) {
 
 // Implements a simple car motion model
 void CarTwiddle::move(double dt, double steering, double acceleration) {
+  // perturb the acceleration and steering angle with gaussian noise
+  acceleration += rand_a(generator);
+  steering += rand_yawd(generator) + steering_drift;
+  
   // clamp the steering angle
   if (steering > max_steering) steering = max_steering;
   if (steering < -max_steering) steering = -max_steering;
@@ -63,24 +67,21 @@ void CarTwiddle::move(double dt, double steering, double acceleration) {
   if (acceleration > max_acceleration) acceleration = max_acceleration;
   if (acceleration < max_deceleration) acceleration = max_deceleration;
 
-  // perturb the acceleration and steering angle with gaussian noise
-  acceleration += rand_a(generator);
-  steering += rand_yawd(generator) + steering_drift;
-
   double dist = (velocity + acceleration * dt / 2) * dt;
   // Compute turing angle from steering angle
   double turn = tan(steering) * dist / length;
   double new_yaw = normalizeAngle(yaw + turn);
 
-  if (fabs(yaw) > EPSILON) {  // turn is not 0
+  if (fabs(turn) > EPSILON) {  // turn is not 0
     // Compute the turn radius
-    double radius = velocity * dt / turn; // del psi = turn / dt
+    double radius = dist / turn; // del psi = turn / dt
     // update x and y
     x += radius * (sin(new_yaw) - sin(yaw));
     y += radius * (cos(yaw) - cos(new_yaw));
 
   #ifdef VERBOSE_OUT
-    cout << "Move: " << turn << " " << yaw << " " << new_yaw << " " << dist << " " << steering << " " << radius <<  " " << acceleration << " " << velocity << endl;
+    cout << "Move: " << turn << " " << yaw << " " << new_yaw << " " << dist << " " << steering 
+         << " " << radius <<  " " << acceleration << " " << velocity << endl;
   #endif
   } else {  // turn is 0
     // update x and y
@@ -127,7 +128,8 @@ double CarTwiddle::run(const VectorXd &p, const double target, const int steps, 
       if (i <= steps) {
         cout << "Car moved with PID: " << control << ", " << x << " " << y << " " << yaw << " " << velocity << endl;
       } else {
-        cout << "Car moved with PID: " << control << ", " << x << " " << y << " " << yaw << " " << velocity << " " << error / (i - steps) << endl;
+        cout << "Car moved with PID: " << control << ", " << x << " " << y << " " << yaw << " " << velocity 
+             << " " << error / (i - steps) << endl;
       }
 #endif
   }

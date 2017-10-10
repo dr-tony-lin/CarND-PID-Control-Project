@@ -24,7 +24,7 @@ private:
   double noise[2];
   double steering_drift;
   double max_steering = M_PI/ 4.0;
-  double max_acceleration = 5;
+  double max_acceleration = 8;
   double max_deceleration = -20;
   double max_velocity = 100;
   int mode = STEERING_MODE;

@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  for (int v = 30; v <= velocity; v += 10) {
+  for (int v = 50; v <= velocity; v += 10) {
     CarTwiddle car(length, 0, y, 0, v * 1.61 * 1000 / 3600.0, noise, drift);
 
     VectorXd steering_p(3);

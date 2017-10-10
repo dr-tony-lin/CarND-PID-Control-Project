@@ -28,7 +28,9 @@ void PID::updateError(double value) {
     error = value;
   }
 
+  // No need to divide it by dt, as if we do so, kd will just be scaled down proportionally
   derror = value - error;
+  // No need to multiply it by dt, as if we do so, ki will just be scaled up proprotionally
   error_sum += value;
   error = value;
 }
