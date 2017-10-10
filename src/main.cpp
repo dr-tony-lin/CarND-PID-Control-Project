@@ -209,7 +209,9 @@ int main(int argc, char* argv[])
             turn *= 2.5/speedReducer.mean<double>(); // 2.5m is the vehicle length
             double steer_curve = atan(turn);
             steer_value -= steer_curve;
+#ifdef VERBOSE_OUT
             std::cout << "curve adjustment: " << steer_curve << std::endl;
+#endif
           }
 #endif
           // Clamp steering value to [-1, 1] range
