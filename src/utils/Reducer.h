@@ -53,7 +53,7 @@ public:
   /**
    * Return max
    */
-  T &max() {
+  T max() {
     if (queue.size() > 0) {
       T max = queue[0];
       for (int i = 1; i < queue.size(); i++) {
@@ -72,7 +72,7 @@ public:
   /**
    * Return min
    */
-  T &min() {
+  T min() {
     if (queue.size() > 0) {
       T min = queue[0];
       for (int i = 1; i < queue.size(); i++) {

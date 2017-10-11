@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     else {
       car.setMode(car.STEERING_MODE);
       double error = car.twiddle(steering_p, target, steps, dt, 0.0001);
-      std::cout << "Speed: " << v << ", Steering: " << steering_p[0] << ", " << steering_p[1] << ", " << steering_p[2] << ", Error: " << error << std::endl; 
+      std::cout << "Speed: " << v << ", Steering coefficients: " << steering_p[0] << ", " << steering_p[1] << ", " << steering_p[2] << ", Error: " << error << std::endl; 
     }
 #ifdef PLOT_WITH_MATPLOT
     std::vector<double> x_trajectory{};
@@ -96,5 +96,5 @@ int main(int argc, char* argv[]) {
   }
 }
 
-//./tune -steps 1000 -dt 0.01 -y 1 -speed 100
-//./tune -steps 1000 -dt 0.01 -y 1 -speed 100 -accel -target 10
+//./twiddle -steps 1000 -dt 0.01 -y 1 -speed 100
+//./twiddle -steps 1000 -dt 0.01 -y 1 -speed 100 -accel -target 10

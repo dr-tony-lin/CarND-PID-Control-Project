@@ -25,6 +25,14 @@ if (APPLY_LOWPASS_FILTER)
     add_definitions(-DAPPLY_LOWPASS_FILTER=1)
 endif(APPLY_LOWPASS_FILTER)
 
+if (USE_MOVING_AVERAGE)
+    add_definitions(-DUSE_MOVING_AVERAGE=1)
+endif(USE_MOVING_AVERAGE)
+
+if (CREATE_CSV)
+    add_definitions(-DCREATE_CSV=1)
+endif(CREATE_CSV)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
     find_path(LIBUV_INCLUDE_DIR uv.h PATH_SUFFIXES libuv )
     find_library(LIBUV NAMES uv libuv)
@@ -34,7 +42,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_directories(${LIBUV_LIBRARIES})
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
-add_executable(pid ${sources} src/main.cpp )
+add_executable(pid ${sources} src/pid.cpp )
 target_link_libraries(pid z ssl uv uWS)
 
 add_executable(twiddle ${sources} src/twiddle.cpp )
