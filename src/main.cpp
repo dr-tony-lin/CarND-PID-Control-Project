@@ -38,6 +38,7 @@ double computeSpeedTarget(double angle, double max) {
   double y = fabs(angle);
   if (y < 0.02) return max;
   if (y < 0.075 ) return std::fmin(max,95);
+#ifdef APPLY_LOWPASS_FILTER
   if (y < 0.08 ) return std::fmin(max, 90);
   if (y < 0.085 ) return std::fmin(max, 85);
   if (y < 0.0875 ) return std::fmin(max, 75);
@@ -45,6 +46,13 @@ double computeSpeedTarget(double angle, double max) {
   if (y < 0.15 ) return std::fmin(max, 65);
   if (y < 0.175 ) return std::fmin(max, 40);
   if (y < 0.2 ) return std::fmin(max, 35);
+#else
+  if (y < 0.078 ) return std::fmin(max, 90);
+  if (y < 0.082 ) return std::fmin(max, 85);
+  if (y < 0.085 ) return std::fmin(max, 55);
+  if (y < 0.0875 ) return std::fmin(max, 40);
+  if (y < 0.09 ) return std::fmin(max, 35);
+#endif
   if (y < 0.3 ) return std::fmin(max, 30);
   if (y < 0.5 ) return std::fmin(max, 25);
   return std::fmin(max, 20);
@@ -169,8 +177,9 @@ int main(int argc, char* argv[])
   // Use the mean of past 40 readings to determine the curverature
   Reducer<double> curvReducer(35);
   Reducer<double> speedReducer(35);
+  Reducer<double> steerReducer(3);
 
-  h.onMessage([&pid_steering, &pid_accel, &angleReducer, &curvReducer, &speedReducer, max_speed, max_accel, max_decel]
+  h.onMessage([&pid_steering, &pid_accel, &angleReducer, &steerReducer, &curvReducer, &speedReducer, max_speed, max_accel, max_decel]
     (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -197,10 +206,14 @@ int main(int argc, char* argv[])
           
           // Add the angle to the reducer
           angleReducer.push(fabs(angle));
-          
+
 #ifdef APPLY_LOWPASS_FILTER
           curvReducer.push(angle);
           speedReducer.push(speed);
+#ifdef DENOISE_STEER
+          steerReducer.push(steer_value);
+          steer_value = steerReducer.mean<double>();
+#endif
           // Apply a low pass filter once we have enough samples
           if (curvReducer.getNumberOfSamplesReceived() >= 200) {
             // Comoute the average turns from the time averaged angles
@@ -210,7 +223,7 @@ int main(int argc, char* argv[])
             double steer_curve = atan(turn);
             steer_value -= steer_curve;
 #ifdef VERBOSE_OUT
-            std::cout << "curve adjustment: " << steer_curve << std::endl;
+            std::cerr << steer_curve << "," << steer_value << "," << deg2rad(angle) << std::endl;
 #endif
           }
 #endif
