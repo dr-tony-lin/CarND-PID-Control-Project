@@ -8,9 +8,12 @@
 // for convenience
 using json = nlohmann::json;
 
+// Maximal steering angle, +- 27 degree.
 static const double MAX_STEERING_ANGLE = 27 * M_PI / 180;
+
 #ifdef APPLY_LOWPASS_FILTER
-static const double CAR_LENGTH = 2.5; // 2.5M
+// Maximal change in steering
+static const double MAX_STEERING_CHANGE = 0.5;
 #endif
 
 // For converting back and forth between radians and degrees.
@@ -18,6 +21,13 @@ static const double CAR_LENGTH = 2.5; // 2.5M
 double deg2rad(double x) { return x * M_PI / 180; }
 double rad2deg(double x) { return x * 180 / M_PI; }
 
+/**
+ * Clamp a to min and max range
+ * @param a the value to clamp
+ * @param min the minimal value
+ * @param max the maximal value
+ * @retur the clampped value
+ */
 template<typename T> T clamp(const T a, const T min, const T max) {
   return a < min? min: (a > max? max: a);
 }
@@ -183,11 +193,10 @@ int main(int argc, char* argv[])
   Reducer<double> angleReducer(5);
 
   // Use the mean of past 40 readings to determine the curverature
-  Reducer<double> turnReducer(30);
-  Reducer<double> speedReducer(30);
+  Reducer<double> curveReducer(30);
   Reducer<double> steerReducer(5);
 
-  h.onMessage([&pid_steering, &pid_accel, &angleReducer, &steerReducer, &turnReducer, &speedReducer, max_speed, max_accel, max_decel]
+  h.onMessage([&pid_steering, &pid_accel, &angleReducer, &steerReducer, &curveReducer, max_speed, max_accel, max_decel]
     (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -205,12 +214,10 @@ int main(int argc, char* argv[])
           // what is the steering angle from the simulator? and the unit, is it the yaw instead?
           // As it is very off from values sent to the simulator 
           double angle = std::stod(j[1]["steering_angle"].get<std::string>()); 
-          double steer_value;
-          
           // UPdate the steering PID error
           pid_steering.updateError(cte);
           // Get the PID control value, it needs to be be normalized it to [-1, 1] range
-          steer_value = clamp(pid_steering.getControl() / MAX_STEERING_ANGLE, -1.0, 1.0);
+          double steer_value = clamp(pid_steering.getControl() / MAX_STEERING_ANGLE, -1.0, 1.0);
 
           // Add the angle to the reducer
           angleReducer.push(fabs(angle));
@@ -218,21 +225,29 @@ int main(int argc, char* argv[])
 #ifdef APPLY_LOWPASS_FILTER
           // Apply a low pass filter once we have enough samples
           double weights[] = {1, 2, 3, 5, 7, 9, 11, 13};
-          speedReducer.push(speed);
+          if (steerReducer.size() > 0) {
+            double delta = steer_value - steerReducer[steerReducer.size() - 1];
+            if (fabs(delta) > MAX_STEERING_CHANGE) { // too much change, clamp it
+              steer_value = steerReducer[steerReducer.size() - 1] + delta < 0? -MAX_STEERING_CHANGE: MAX_STEERING_CHANGE;
+            }
+          }
           steerReducer.push(steer_value);
           double radian = deg2rad(angle);
-          // Compute turing angle from steering angle
-          double turn = tan(radian) * speed / CAR_LENGTH;
-          // Add the turn to the reducer
-          turnReducer.push(turn);
+          // Add the angle to the reducer
+          curveReducer.push(radian);
           
-          if (turnReducer.getNumberOfSamplesReceived() >= 200) { // we have enough samples to begin with
+          if (curveReducer.getNumberOfSamplesReceived() >= 200) { // we have enough samples to begin with
             // Get the average steering value and clamp to [-1, 1]
             steer_value = steerReducer.mean<double>(weights);
             steer_value = clamp(steer_value, -1.0, 1.0);
-            // Approximate the curvature by sssuming the average turn reflects the curvature
-            double curvature = turnReducer.mean<double>() * CAR_LENGTH / speedReducer.mean<double>();
-            double steer_curve = atan(curvature) / MAX_STEERING_ANGLE;
+  
+            // Approximate the curvature by sssuming the average angle reflects the curvature
+            // A = -Ar + Ac, where A is the angle, Ar is the portion of A to compensate in order to following the road,
+            // and Ac is for moving the vehicle back to the center. mean(A) = sum(A)/N = sum(Ar)/N + sum(Ac)/N
+            // where N is the number of samples. If the curvature of the road is constant, Ar = mean(Ar) = sum(Ar)/N.
+            // Furthermore since we try to keep the vehicle at the center, mean(Ac) can assume to approach to 0.
+            // So we have mean(A) = mean(Ar). Furthermore, the steering will 
+            double steer_curve = curveReducer.mean<double>() / MAX_STEERING_ANGLE;
             steer_value -= steer_curve;
             // Clamp steering value to [-1, 1] range
             steer_value = clamp(steer_value, -1.0, 1.0);
