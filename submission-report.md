@@ -11,11 +11,11 @@
 
 ## Content of the Submission and Usage
 This submission includes the following c++ files:
-* pid_main.cpp: the main function that communicates with the simulator and drive the PID process.
+* pid_main.cpp: the main function that communicates with the simulator and drive the PID process. It was modified from the original [CarND-PID-Control-Propject](https://github.com/udacity/CarND-PID-Control-Project)
 * twiddle_main.cpp: the main twiddle function for narrowing the PID parameters
 * control/PID.[h, cpp]: the PID controller
 * utils/Reducer.h: the Reducer class for sum, mean, min, max on a collection of samples.
-* tune/Twiddle.[h, cpp]: Provides twiddle implementation
+* tune/Twiddle.[h, cpp]: Provides twiddle implementation in C++
 * tune/CarTwiddle.[h, cpp]: a subclass of Twiddle for a car model
 
 ### Usage
