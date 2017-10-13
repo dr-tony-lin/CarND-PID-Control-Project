@@ -1,5 +1,5 @@
 # PID Control Project
-
+[Convergence]: ./convergence.png
 [PID]: ./pid.png
 [MA]: ./ma.png
 [Mean Angle]: ./cm-angle.png
@@ -11,7 +11,7 @@
 
 ## Content of the Submission and Usage
 This submission includes the following c++ files:
-* main.cpp: the main function that communicates with the simulator and drive the PID process.
+* pid.cpp: the main function that communicates with the simulator and drive the PID process.
 * twiddle.cpp: the main twiddle function for narrowing the PID parameters
 * control/PID.[h, cpp]: the PID controller
 * utils/Reducer.h: the Reducer class for sum, mean, min, max on a collection of samples.
@@ -123,7 +123,7 @@ For the acceleration PID coefficients, the values produced by twiddle are used w
 
 The steering PID coefficients, on the other hand, required a lot of tuning efforts to reduce oscillation, and produce reasonable controller outputs.
 
-The convergence diagram of different PID coefficients are shown in [this diagram](image1.png). The tuning process started with the coefficients returned from twiddle as follows:
+The convergence diagram of different PID coefficients are shown in [this diagram](./convergence.png). The tuning process started with the coefficients returned from twiddle as follows:
 
 1. If the vehicle has difficulties to stay on the road at turns, increase k<sub>p</sub>.
 2. Otherwise, if the vehicle oscillates a lot, reduce k<sub>p</sub>
@@ -173,18 +173,23 @@ On the other hand, the algorithm for computing the throttle from acceleration or
 
 
 ## Results
-The following videos show the simulation with different steering algorithms, the charts beside the videos show the corresponding speed, original steering, adjusted steering, mean, and CTE before the bridge.
+The following videos show the simulation with different steering algorithms, the charts beside the videos show the corresponding speed, original steering, adjusted steering, mean, and CTE before the bridge. The steering PID coefficients that are tuned under each algorithm are also shown.
 
-|                            |       Video         |       Chart           |
-|:---------------------------|:-------------------:|:---------------------:|
-| PID Only                   |[Video](pid.mp4)     | [Chart](pid.png)      |
-| Moving Average             |[Video](ma.mp4)      | [Chart](ma.png)       |
-| Reduction using Mean Angle |[Video](cm-angle.mp4)| [Chart](cm-angle.png) |
-| Reduction using Mean Turn  |[Video](cm-turn.mp4) | [Chart](cm-turn.png)  |
+|                            |       Video         |       Chart           |    PID Coefficients     |
+|:---------------------------|:-------------------:|:---------------------:|:-----------------------:|
+| PID Only                   |[Video](pid.mp4)     | [Chart](pid.png)      | kp=0.108, kd=3.52, ki=0 |
+| Moving Average             |[Video](ma.mp4)      | [Chart](ma.png)       | kp=0.075, kd=2.5, ki=0  |
+| Reduction using Mean Angle |[Video](cm-angle.mp4)| [Chart](cm-angle.png) | kp=0.13, kd=4, ki=0     |
+| Reduction using Mean Turn  |[Video](cm-turn.mp4) | [Chart](cm-turn.png)  | kp=0.13, kd=4, ki=0     |
 
 From the chart, we can observe the followings:
 
 1. Moving average along did not reduce but increased the oscillation
-2. By comparing the CTE curves on the charts, oscillation reduction using moving average did have some success.
+2. By comparing the CTE curves on the charts, oscillation reduction using moving average did have reduced the oscillation, and was able to achieve a higher speed (up to **89Mph** has been observer).
 3. Mean angle performed better than mean turn which has yields larger CTE. 
 4. Also observed in my experiment, oscillation reduction without using mean steering did not work.
+
+### Discussion
+The above algorithms require different PID coefficients to reach certain stability. This, of course, might affect the characteristics of the performance curve shown in the above charts. But for being able to run the simulator at a higher speed with reduced oscillation, I think I have achieved the goal.
+
+The extra works that I have done to stabilize the vehicle was to meet a challenge from one of my friend that, with the bare PID, it looked like the vehicle was driven by a drunken driver. I think the algorithm has made the driver less drunken. well, or at least, just for fun!
