@@ -186,11 +186,11 @@ The following videos show the simulation with different steering algorithms, the
 From the chart, we can observe the followings:
 
 1. Moving average along did not reduce but increased the oscillation
-2. By comparing the CTE curves on the charts, oscillation reduction using moving average did have reduced the oscillation, and was able to achieve a higher speed (up to **89Mph** has been observer).
-3. Mean angle performed better than mean turn which has yields larger CTE. 
-4. Also observed in my experiment, oscillation reduction without using mean steering did not work. Further more, clamping changes in steering may cause the vehicle to oscillate more.
+2. By comparing the CTE curves on the charts, oscillation reduction using moving average did have reduced the oscillation, and was able to achieve a higher speed (up to **89Mph** has been observed).
+3. Mean angle performed better than mean turn which had resulted in larger CTE. 
+4. Also observed in my experiments, oscillation reduction without using mean steering, and clamping changes in steering value may cause the vehicle to oscillate more.
 
 ### Discussion
 The above algorithms require different PID coefficients to reach certain stability. This, of course, might affect the characteristics of the performance curve shown in the above charts. But for being able to run the simulator at a higher speed with reduced oscillation, I think I have achieved the goal.
 
-The extra works that I have done to stabilize the vehicle was to meet a challenge from one of my friend that, with the bare PID, it looked like the vehicle was driven by a drunken driver. I think the algorithm has made the driver less drunken. well, or at least, just for fun!
+The extra works that I have done to stabilize the vehicle was to due a challenge from one of my friend in that, with PID alone, it looked like the driver was drunk! I think the apparoch has served some purposes, or at least, just for fun!
