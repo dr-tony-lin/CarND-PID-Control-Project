@@ -139,7 +139,7 @@ and
 
 k<sub>p</sub> = 13.5795, k<sub>d</sub>= -11.4359, and k<sub>i</sub> = 0 for aceleration. 
 
-The k<sub>i</sub> in both controllers are 0 as no drift was assumed, and they seem fine with the simulator.
+The k<sub>i</sub> in both controllers are 0 as no drift was assumed, and they seem fine with the simulator. Should a small amount of drift be applied for the acceleration PID? I think it will depend on the road condition, so I decided to not to consider it.
 
 ## Steering
 The CTE values reported the simulator are updated to the steering PID controller. The steering control value is then obtained from the PID controller, then normalized to [-1 1] range.
