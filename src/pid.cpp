@@ -262,11 +262,9 @@ int main(int argc, char* argv[])
           stabilizeReducer.push(radian);
 #endif
           if (stabilizeReducer.getNumberOfSamplesReceived() >= 200) { // we have enough samples to begin with
-#ifdef USE_MOVING_AVERAGE
             // Get the average steering value and clamp to [-1, 1]
             steer_value = steerReducer.mean<double>(steering_weights);
             steer_value = clamp(steer_value, -1.0, 1.0);
-#endif
 #ifdef USE_MEAN_TURN
             // Stabilize with the average turn, use it and the average speed to compute the steering offset
             double turn = stabilizeReducer.mean<double>();
