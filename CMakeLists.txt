@@ -23,6 +23,7 @@ endif(VERBOSE_OUT)
 
 if (STABILIZE_MOTION)
     add_definitions(-DSTABILIZE_MOTION=1)
+    add_definitions(-DUSE_MOVING_AVERAGE=1)
 endif(STABILIZE_MOTION)
 
 if (USE_MOVING_AVERAGE)
