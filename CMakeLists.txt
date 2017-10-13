@@ -21,17 +21,21 @@ if (VERBOSE_OUT)
     add_definitions(-DVERBOSE_OUT=1)
 endif(VERBOSE_OUT)
 
-if (APPLY_CURVATURE_ESTIMATE)
-    add_definitions(-DAPPLY_CURVATURE_ESTIMATE=1)
-endif(APPLY_CURVATURE_ESTIMATE)
+if (STABILIZE_MOTION)
+    add_definitions(-DSTABILIZE_MOTION=1)
+endif(STABILIZE_MOTION)
 
 if (USE_MOVING_AVERAGE)
     add_definitions(-DUSE_MOVING_AVERAGE=1)
 endif(USE_MOVING_AVERAGE)
 
-if (CREATE_CSV)
-    add_definitions(-DCREATE_CSV=1)
-endif(CREATE_CSV)
+if (CLAMP_STEERING_DELTA)
+    add_definitions(-DCLAMP_STEERING_DELTA=1)
+endif(CLAMP_STEERING_DELTA)
+
+if (USE_MEAN_TURN)
+    add_definitions(-DUSE_MEAN_TURN=1)
+endif(USE_MEAN_TURN)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
     find_path(LIBUV_INCLUDE_DIR uv.h PATH_SUFFIXES libuv )

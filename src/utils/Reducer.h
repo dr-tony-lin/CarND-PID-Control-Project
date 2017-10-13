@@ -16,7 +16,7 @@ template<typename T> class Reducer {
   // queue of samples to keep
   deque<T> queue; 
 public:
-  Reducer(int size_limit): limit(size_limit) {};
+  Reducer(int size_limit): limit(size_limit), total_samples(0), queue(0) {};
 
   int getLimit() { return limit;}
 
@@ -92,7 +92,7 @@ public:
    * Return weighted sum
    * @param weights the weights
    */
-  template<typename V> V mean(T weights[]) {
+  template<typename V> V mean(const T weights[]) {
     V total = 0;
     V total_w = 0;
     if (queue.size()) {

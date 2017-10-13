@@ -11,9 +11,20 @@ using json = nlohmann::json;
 // Maximal steering angle, +- 27 degree.
 static const double MAX_STEERING_ANGLE = 27 * M_PI / 180;
 
-#ifdef APPLY_LOWPASS_FILTER
+
+#ifdef STABILIZE_MOTION
+#ifdef CLAMP_STEERING_DELTA
 // Maximal change in steering
 static const double MAX_STEERING_CHANGE = 0.5;
+#endif
+#ifdef USE_MEAN_TURN
+static const double CAR_LENGTH = 2.5;
+#endif
+#endif
+
+#ifdef USE_MOVING_AVERAGE
+// Weighted moving average of steering
+static double steering_weights[] = {1, 2, 3, 5, 7, 9, 11, 13};
 #endif
 
 // For converting back and forth between radians and degrees.
@@ -57,17 +68,20 @@ double computeSpeedTarget(double angle, double max) {
   double y = fabs(angle);
   if (y < 0.02) return max;
   if (y < 0.075 ) return std::fmin(max,95);
-#ifdef APPLY_LOWPASS_FILTER
-  if (y < 0.0875 ) return std::fmin(max, 85);
-  if (y < 0.12 ) return std::fmin(max, 45);
+#ifdef STABILIZE_MOTION
+  if (y < 0.1 ) return std::fmin(max, 90);
+  if (y < 0.12 ) return std::fmin(max, 85);
+  if (y < 0.125 ) return std::fmin(max, 40);
+#elif defined(USE_MOVING_AVERAGE)
+  if (y < 0.0875 ) return std::fmin(max, 90);
+  if (y < 0.12 ) return std::fmin(max, 55);
   if (y < 0.13 ) return std::fmin(max, 40);
   if (y < 0.14) return std::fmin(max, 35);
 #else
-  if (y < 0.078 ) return std::fmin(max, 90);
-  if (y < 0.082 ) return std::fmin(max, 85);
-  if (y < 0.085 ) return std::fmin(max, 45);
-  if (y < 0.0875 ) return std::fmin(max, 40);
-  if (y < 0.09 ) return std::fmin(max, 35);
+  if (y < 0.0875 ) return std::fmin(max, 90);
+  if (y < 0.12 ) return std::fmin(max, 85);
+  if (y < 0.13 ) return std::fmin(max, 60);
+  if (y < 0.14) return std::fmin(max, 35);
 #endif
   if (y < 0.3 ) return std::fmin(max, 30);
   if (y < 0.5 ) return std::fmin(max, 25);
@@ -118,10 +132,10 @@ int main(int argc, char* argv[])
 {
   uWS::Hub h;
 
-#ifdef APPLY_LOWPASS_FILTER
+#ifdef STABILIZE_MOTION
   double s_coeffs[3] = {0.13, 4, 0};
 #elif defined(USE_MOVING_AVERAGE)
-  double s_coeffs[3] = {0.08, 3.0, 0};
+  double s_coeffs[3] = {0.075, 2.5, 0};
 #else
   double s_coeffs[3] = {0.108, 3.52, 0}; // {0.119058, 3.23448, 0};
 #endif
@@ -144,6 +158,7 @@ int main(int argc, char* argv[])
   double max_speed = 100;
   double max_accel = 8;
   double max_decel = -20;
+  bool create_csv = false;
 
   // Process command line options
   for (int i = 1; i < argc; i++) {
@@ -178,6 +193,8 @@ int main(int argc, char* argv[])
         std::cerr << "Invalid y: " << argv[i] << std::endl;
         exit(-1);
       }
+    } else if (std::string((argv[i])) == "-csv") { // maximum speed
+      create_csv = true;
     }
   }
 
@@ -193,10 +210,11 @@ int main(int argc, char* argv[])
   Reducer<double> angleReducer(5);
 
   // Use the mean of past 40 readings to determine the curverature
-  Reducer<double> curveReducer(30);
+  Reducer<double> stabilizeReducer(30);
+  Reducer<double> speedReducer(30);
   Reducer<double> steerReducer(5);
 
-  h.onMessage([&pid_steering, &pid_accel, &angleReducer, &steerReducer, &curveReducer, max_speed, max_accel, max_decel]
+  h.onMessage([&pid_steering, &pid_accel, &angleReducer, &steerReducer, &stabilizeReducer, &speedReducer, max_speed, max_accel, max_decel, create_csv]
     (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -222,50 +240,62 @@ int main(int argc, char* argv[])
           // Add the angle to the reducer
           angleReducer.push(fabs(angle));
 
-#ifdef APPLY_LOWPASS_FILTER
+#ifdef STABILIZE_MOTION
           // Apply a low pass filter once we have enough samples
-          double weights[] = {1, 2, 3, 5, 7, 9, 11, 13};
+#ifdef CLAMP_STEERING_DELTA
           if (steerReducer.size() > 0) {
             double delta = steer_value - steerReducer[steerReducer.size() - 1];
             if (fabs(delta) > MAX_STEERING_CHANGE) { // too much change, clamp it
               steer_value = steerReducer[steerReducer.size() - 1] + delta < 0? -MAX_STEERING_CHANGE: MAX_STEERING_CHANGE;
             }
           }
+#endif
           steerReducer.push(steer_value);
           double radian = deg2rad(angle);
+#ifdef USE_MEAN_TURN
+          // Compute turing angle from steering angle
+          double turn = tan(radian) * speed / CAR_LENGTH;
+          stabilizeReducer.push(turn);
+          speedReducer.push(speed);
+#else
           // Add the angle to the reducer
-          curveReducer.push(radian);
-          
-          if (curveReducer.getNumberOfSamplesReceived() >= 200) { // we have enough samples to begin with
+          stabilizeReducer.push(radian);
+#endif
+          if (stabilizeReducer.getNumberOfSamplesReceived() >= 200) { // we have enough samples to begin with
+#ifdef USE_MOVING_AVERAGE
             // Get the average steering value and clamp to [-1, 1]
-            steer_value = steerReducer.mean<double>(weights);
+            steer_value = steerReducer.mean<double>(steering_weights);
             steer_value = clamp(steer_value, -1.0, 1.0);
-  
-            // Approximate the curvature by sssuming the average angle reflects the curvature
-            // A = -Ar + Ac, where A is the angle, Ar is the portion of A to compensate in order to following the road,
-            // and Ac is for moving the vehicle back to the center. mean(A) = sum(A)/N = sum(Ar)/N + sum(Ac)/N
-            // where N is the number of samples. If the curvature of the road is constant, Ar = mean(Ar) = sum(Ar)/N.
-            // Furthermore since we try to keep the vehicle at the center, mean(Ac) can assume to approach to 0.
-            // So we have mean(A) = mean(Ar). Furthermore, the steering will 
-            double steer_curve = curveReducer.mean<double>() / MAX_STEERING_ANGLE;
-            steer_value -= steer_curve;
+#endif
+#ifdef USE_MEAN_TURN
+            // Stabilize with the average turn, use it and the average speed to compute the steering offset
+            double turn = stabilizeReducer.mean<double>();
+            turn *= CAR_LENGTH/speedReducer.mean<double>();
+            double steer_offset = -atan(turn) / MAX_STEERING_ANGLE;
+#else
+            // Regularize steering with moving angle average to reduce oscillation caused by overshots
+            double steer_offset = -stabilizeReducer.mean<double>() / MAX_STEERING_ANGLE;
+#endif
+            steer_value += steer_offset;
             // Clamp steering value to [-1, 1] range
             steer_value = clamp(steer_value, -1.0, 1.0);
-#ifdef CREATE_CSV
-            std::cerr << steer_curve << "," << steer_value << "," << deg2rad(angle) << std::endl;
-#endif
+            if (create_csv) {
+              std::cerr << steer_offset << "," << steer_value << "," << deg2rad(angle) << "," << cte << "," << speed 
+                        << "," << steerReducer[steerReducer.size() - 1] << std::endl;
+            }
           }
-#elif defined(USE_MOVING_AVERAGE) 
-          double weights[] = {1, 2, 3, 5, 7, 9, 11, 13};
+#else
+#ifdef USE_MOVING_AVERAGE
           steerReducer.push(steer_value);
           if (steerReducer.getNumberOfSamplesReceived() >= steerReducer.getLimit()) {
-            steer_value = steerReducer.mean<double>(weights);
+            steer_value = steerReducer.mean<double>(steering_weights);
             steer_value = clamp(steer_value, -1.0, 1.0);
-#ifdef CREATE_CSV
-            std::cerr << steer_value << "," << deg2rad(angle) << std::endl;
-#endif // #ifdef VERBOSE_OUT
           }
-#endif // #ifdef USE_MOVING_AVERAGE
+#endif
+        if (create_csv) {
+          std::cerr << steer_value << "," << deg2rad(angle) << "," << cte << "," << speed  << std::endl;
+        }
+#endif // #else
           // Get the average of the past angle readings
           double reduced_angle = angleReducer.mean<double>();
 
