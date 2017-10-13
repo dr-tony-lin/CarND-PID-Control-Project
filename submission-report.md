@@ -11,8 +11,8 @@
 
 ## Content of the Submission and Usage
 This submission includes the following c++ files:
-* pid.cpp: the main function that communicates with the simulator and drive the PID process.
-* twiddle.cpp: the main twiddle function for narrowing the PID parameters
+* pid_main.cpp: the main function that communicates with the simulator and drive the PID process.
+* twiddle_main.cpp: the main twiddle function for narrowing the PID parameters
 * control/PID.[h, cpp]: the PID controller
 * utils/Reducer.h: the Reducer class for sum, mean, min, max on a collection of samples.
 * tune/Twiddle.[h, cpp]: Provides twiddle implementation

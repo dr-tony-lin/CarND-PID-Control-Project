@@ -46,10 +46,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_directories(${LIBUV_LIBRARIES})
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
-add_executable(pid ${sources} src/pid.cpp )
+add_executable(pid ${sources} src/pid_main.cpp )
 target_link_libraries(pid z ssl uv uWS)
 
-add_executable(twiddle ${sources} src/twiddle.cpp )
+add_executable(twiddle ${sources} src/twiddle_main.cpp )
 if (PLOT_WITH_MATPLOT)
     target_include_directories(twiddle PRIVATE ${PYTHON_INCLUDE_DIRS})
     target_include_directories(twiddle PRIVATE /usr/local/lib/python2.7/site-packages/numpy/core/include)
