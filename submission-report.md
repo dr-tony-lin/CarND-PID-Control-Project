@@ -74,7 +74,9 @@ In addition, the following macros can be defined:
 
 * PLOT_WITH_MATPLOT: when defined on Mac, twiddle will use python matplotlib module to plot the PID convergence diagram. In order to do this, tpython 2.7 with numpy, and matplotlib are required. Furthermore, on Bash on Windows, an X11 server is required and the DISPLAY environment need to be set accordingly.
 
-* APPLY_LOWPASS_FILTER: when defined, PID control will apply a low pass filter will be applied to steering for experimenting effec of the filter on oscillation.
+* STABILIZE_MOTION: when defined, the program will try to stabilize the vehicle. WHen this is defined, USE_MEAN_TURN can also be defined to use moving average of turns. Please refer to the **Steering** section. For example: 
+
+    cmake -DSTABILIZE_MOTION=1 -DUSE_MEAN_TURN=1 ..
 
 #### Build API Documentation
 The documentation for functions, classes and methods are included in the header files in Doxygen format. To generate Api documentation with the included doxygen.cfg:
@@ -171,7 +173,6 @@ For deceleration, the throttle will be set to a negative value.
 
 On the other hand, the algorithm for computing the throttle from acceleration or deceleration is purely empirical, just like a driver will not how much to step on the pedal or brake.
 
-
 ## Results
 The following videos show the simulation with different steering algorithms, the charts beside the videos show the corresponding speed, original steering, adjusted steering, mean, and CTE before the bridge. The steering PID coefficients that are tuned under each algorithm are also shown.
 
@@ -187,7 +188,7 @@ From the chart, we can observe the followings:
 1. Moving average along did not reduce but increased the oscillation
 2. By comparing the CTE curves on the charts, oscillation reduction using moving average did have reduced the oscillation, and was able to achieve a higher speed (up to **89Mph** has been observer).
 3. Mean angle performed better than mean turn which has yields larger CTE. 
-4. Also observed in my experiment, oscillation reduction without using mean steering did not work.
+4. Also observed in my experiment, oscillation reduction without using mean steering did not work. Further more, clamping changes in steering may cause the vehicle to oscillate more.
 
 ### Discussion
 The above algorithms require different PID coefficients to reach certain stability. This, of course, might affect the characteristics of the performance curve shown in the above charts. But for being able to run the simulator at a higher speed with reduced oscillation, I think I have achieved the goal.
