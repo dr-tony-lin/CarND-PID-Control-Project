@@ -108,14 +108,14 @@ double computeThrottle(double accel, double target, double max_accel, double max
     }
   }
   else {
-    if (accel > -20) { // deceleration
+    if (accel <= -15) { // deceleration
       return -1;
-    } else if (accel > -10) { // deceleration
-      return -0.95 + (1 - 0.95) * accel / max_decel;
-    } else if (accel > -5) { // deceleration
-      return -0.9 + (1 - 0.9) * accel / max_decel;
+    } else if (accel < -10) { // deceleration
+      return -0.95 - (1 - 0.95) * accel / max_decel;
+    } else if (accel < -5) { // deceleration
+      return -0.9 - (1 - 0.9) * accel / max_decel;
     }
-    return -0.85 + (1 - 0.85) * accel / max_decel;
+    return -0.85 - (1 - 0.85) * accel / max_decel;
   }
 }
 
@@ -139,21 +139,8 @@ int main(int argc, char* argv[])
 #else
   double s_coeffs[3] = {0.108, 3.52, 0}; // {0.119058, 3.23448, 0};
 #endif
-  // ./tune -steps 1500 -dt 0.01 -y 1 -speed 100
-  // Speed: 50, Steering: 0.0595525, 3.29189, 0, Error: 4.36856e-50
-  // Speed: 60, Steering: 0.362673, 6.29715, 0, Error: 4.19443e-163
-  // Speed: 70, Steering: 0.0771785, 2.63884, 0, Error: 1.7917e-81
-  // Speed: 80, Steering: 0.0790413, 2.31635, 0, Error: 4.48461e-95
-  // Speed: 90, Steering: 0.116606, 2.43286, 0, Error: 6.02029e-135
-  // Speed: 100, Steering: 0.178943, 2.60117, 0, Error: 8.21503e-200
+
   double v_coeffs[3] = {13.5795, -11.4359, 0};
-  // ./tune -steps 1000 -dt 0.01 -y 1 -speed 80 -accel -target 5
-  // Speed: 30, Acceleration coefficient: 11.4359, -4.641, 0, Error: 4.54384e-28
-  // Speed: 40, Acceleration coefficient: 11.4359, -4.641, 0, Error: 4.54384e-28
-  // Speed: 50, Acceleration coefficient: 11.4359, -6.1051, 0, Error: 4.54384e-28
-  // Speed: 60, Acceleration coefficient: 11.4359, -7.71561, 0, Error: 4.54384e-28
-  // Speed: 70, Acceleration coefficient: 13.5795, -11.4359, 0, Error: 8.07794e-28
-  // Speed: 80, Acceleration coefficient: 24.5227, -21.3843, 0, Error: 2.01948e-28
 
   double max_speed = 100;
   double max_accel = 8;
@@ -232,6 +219,7 @@ int main(int argc, char* argv[])
           // what is the steering angle from the simulator? and the unit, is it the yaw instead?
           // As it is very off from values sent to the simulator 
           double angle = std::stod(j[1]["steering_angle"].get<std::string>()); 
+          std::cout << "steering_angle: " << angle << std::endl;
           // UPdate the steering PID error
           pid_steering.updateError(cte);
           // Get the PID control value, it needs to be be normalized it to [-1, 1] range
