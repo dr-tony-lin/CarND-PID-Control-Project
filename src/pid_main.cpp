@@ -108,14 +108,11 @@ double computeThrottle(double accel, double target, double max_accel, double max
     }
   }
   else {
-    if (accel <= -15) { // deceleration
+    if (accel <= -2) { // deceleration
       return -1;
-    } else if (accel < -10) { // deceleration
-      return -0.95 - (1 - 0.95) * accel / max_decel;
-    } else if (accel < -5) { // deceleration
-      return -0.9 - (1 - 0.9) * accel / max_decel;
     }
-    return -0.85 - (1 - 0.85) * accel / max_decel;
+
+    return -0.9 + (1 - 0.9) * accel / max_decel;
   }
 }
 
